@@ -9,7 +9,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.jedey.ApacheHttp2Transport.ApacheHttp2Transport;
-
+import com.jedey.ReactorNettyHttp2Transport.ReactorNettyHttp2Transport;
 import com.google.firebase.messaging.*;
 
 import java.util.ArrayList;
@@ -42,6 +42,17 @@ public class MyApp {
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                 .setHttpTransport(new ApacheHttp2Transport())
+                .build();
+
+        return FirebaseApp.initializeApp(options);
+    }
+
+    public static FirebaseApp setup_admin_netty_http2() throws IOException {
+        FileInputStream serviceAccount = new FileInputStream("src/main/resources/cert.json");
+
+        FirebaseOptions options = FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .setHttpTransport(new ReactorNettyHttp2Transport())
                 .build();
 
         return FirebaseApp.initializeApp(options);
@@ -107,33 +118,37 @@ public class MyApp {
     public static void main(String[] args) throws FirebaseMessagingException, IOException{
 
         List<Message> messages = get_messages(500);
-        int numRequests = 5; // Number of requests to execute
+        int numRequests = 1; // Number of time to loop
         FirebaseApp app;
 
-        System.out.println("\n\nHTTP1");
-        app = setup_admin_apache_http1();
-        // benchmark_send_all(messages, numRequests, app);
+        app = setup_admin_netty_http2();
         benchmark_send_each(messages, numRequests, app);
         app.delete();
 
-        System.out.println("\n\nHTTP2");
-        app = setup_admin_apache_http2();
-        // benchmark_send_all(messages, numRequests, app);
-        benchmark_send_each(messages, numRequests, app);
-        app.delete();
+        // System.out.println("\n\nHTTP1");
+        // app = setup_admin_apache_http1();
+        // // benchmark_send_all(messages, numRequests, app);
+        // benchmark_send_each(messages, numRequests, app);
+        // app.delete();
+
+        // System.out.println("\n\nHTTP2");
+        // app = setup_admin_apache_http2();
+        // // benchmark_send_all(messages, numRequests, app);
+        // benchmark_send_each(messages, numRequests, app);
+        // app.delete();
 
 
-        System.out.println("\n\nHTTP1");
-        app = setup_admin_apache_http1();
-        benchmark_send_each(messages, numRequests, app);
-        // benchmark_send_all(messages, numRequests, app);
-        app.delete();
+        // System.out.println("\n\nHTTP1");
+        // app = setup_admin_apache_http1();
+        // benchmark_send_each(messages, numRequests, app);
+        // // benchmark_send_all(messages, numRequests, app);
+        // app.delete();
 
 
-        System.out.println("\n\nHTTP2");
-        app = setup_admin_apache_http2();
-        // benchmark_send_all(messages, numRequests, app);
-        benchmark_send_each(messages, numRequests, app);
-        app.delete();
+        // // System.out.println("\n\nHTTP2");
+        // app = setup_admin_apache_http2();
+        // // benchmark_send_all(messages, numRequests, app);
+        // benchmark_send_each(messages, numRequests, app);
+        // app.delete();
     }
 }

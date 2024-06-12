@@ -12,6 +12,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.jedey.ApacheHttp2Transport.ApacheHttp2Transport;
+import com.jedey.ReactorNettyHttp2Transport.ReactorNettyHttp2Transport;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,8 +26,8 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Fork(1)
 @Warmup(iterations = 1)
-@Measurement(iterations = 3)
-public class AdminSendEachBenchmark {
+@Measurement(iterations = 5)
+public class JMHSendEachBenchmark {
     List<Message> messages;
     FirebaseApp app;
     int message_count = 500;
@@ -88,6 +89,8 @@ public class AdminSendEachBenchmark {
             options.setHttpTransport(new ApacheHttpTransport());
         }else if (benchmarkName == "benchmark_send_all_apache_http1"){
             options.setHttpTransport(new ApacheHttpTransport());
+        } else if (benchmarkName == "benchmark_send_all_netty_http2") {
+            options.setHttpTransport(new ReactorNettyHttp2Transport());
         }
         app = FirebaseApp.initializeApp(options.build());
     }
@@ -98,51 +101,59 @@ public class AdminSendEachBenchmark {
     }
 
     // Benchmarks
+    // @Benchmark
+    // public void benchmark_send_each_apache_http2_default() throws FirebaseMessagingException {
+    //     System.out.println("benchmark_send_each_apache_http2_default");
+
+    //     BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
+    //     System.out.println("Dry Run Response: " + response.getSuccessCount());
+    // }
+
+    // @Benchmark
+    // public void benchmark_send_each_apache_http2_custom() throws FirebaseMessagingException {
+    //     System.out.println("benchmark_send_each_apache_http2_custom");
+
+    //     BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
+    //     System.out.println("Dry Run Response: " + response.getSuccessCount());
+    // }
+
+    // @Benchmark
+    // public void benchmark_send_each_apache_http1() throws FirebaseMessagingException {
+    //     System.out.println("benchmark_send_each_apache_http1");
+
+    //     BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
+    //     System.out.println("Dry Run Response: " + response.getSuccessCount());
+    // }
+
+    // @Benchmark
+    // public void benchmark_send_all_apache_http1() throws FirebaseMessagingException {
+    //     System.out.println("benchmark_send_all_apache_http1");
+
+    //     BatchResponse response = FirebaseMessaging.getInstance().sendAll(messages, true);
+    //     System.out.println("Dry Run Response: " + response.getSuccessCount());
+    // }
+
+    // @Benchmark
+    // public void benchmark_send_each_default() throws FirebaseMessagingException {
+    //     System.out.println("benchmark_send_each_apache_http1");
+
+    //     BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
+    //     System.out.println("Dry Run Response: " + response.getSuccessCount());
+    // }
+
+    // @Benchmark
+    // public void benchmark_send_all_default() throws FirebaseMessagingException {
+    //     System.out.println("benchmark_send_all_apache_http1");
+
+    //     BatchResponse response = FirebaseMessaging.getInstance().sendAll(messages, true);
+    //     System.out.println("Dry Run Response: " + response.getSuccessCount());
+    // }
+
     @Benchmark
-    public void benchmark_send_each_apache_http2_default() throws FirebaseMessagingException {
-        System.out.println("benchmark_send_each_apache_http2_default");
+    public void benchmark_send_all_netty_http2() throws FirebaseMessagingException {
+        System.out.println("benchmark_send_each_netty_http2");
 
         BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
-        System.out.println("Dry Run Response: " + response.getSuccessCount());
-    }
-
-    @Benchmark
-    public void benchmark_send_each_apache_http2_custom() throws FirebaseMessagingException {
-        System.out.println("benchmark_send_each_apache_http2_custom");
-
-        BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
-        System.out.println("Dry Run Response: " + response.getSuccessCount());
-    }
-
-    @Benchmark
-    public void benchmark_send_each_apache_http1() throws FirebaseMessagingException {
-        System.out.println("benchmark_send_each_apache_http1");
-
-        BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
-        System.out.println("Dry Run Response: " + response.getSuccessCount());
-    }
-
-    @Benchmark
-    public void benchmark_send_all_apache_http1() throws FirebaseMessagingException {
-        System.out.println("benchmark_send_all_apache_http1");
-
-        BatchResponse response = FirebaseMessaging.getInstance().sendAll(messages, true);
-        System.out.println("Dry Run Response: " + response.getSuccessCount());
-    }
-
-    @Benchmark
-    public void benchmark_send_each_default() throws FirebaseMessagingException {
-        System.out.println("benchmark_send_each_apache_http1");
-
-        BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
-        System.out.println("Dry Run Response: " + response.getSuccessCount());
-    }
-
-    @Benchmark
-    public void benchmark_send_all_default() throws FirebaseMessagingException {
-        System.out.println("benchmark_send_all_apache_http1");
-
-        BatchResponse response = FirebaseMessaging.getInstance().sendAll(messages, true);
         System.out.println("Dry Run Response: " + response.getSuccessCount());
     }
 }
