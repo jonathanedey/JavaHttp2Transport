@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.google.api.client.http.apache.v2.ApacheHttpTransport;
+import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutures;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -14,6 +16,8 @@ import com.google.firebase.messaging.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class MyApp {
 
@@ -71,14 +75,14 @@ public class MyApp {
 
 
     public static void benchmark_send_each(List<Message> messages, int numRequests, FirebaseApp app) throws FileNotFoundException, IOException, FirebaseMessagingException {
-        System.out.println("\nsendEach()");
-        for (int i = 0; i < 1; i++) {
-            FirebaseMessaging.getInstance().sendEach(messages, true);
-        }
+        // System.out.println("\nsendEach()");
+        // for (int i = 0; i < 1; i++) {
+        //     FirebaseMessaging.getInstance().sendEach(messages, true);
+        // }
 
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < numRequests; i++) {
-            BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages, true);
+            BatchResponse response = FirebaseMessaging.getInstance(app).sendEach(messages, true);
             System.out.println("Dry Run Response: " + response.getSuccessCount());
         }
 
@@ -88,8 +92,35 @@ public class MyApp {
     
         System.out.println("Total time: " + totalTime + " ms");
         System.out.println("Average time per request: " + averageTime + " ms");
+    }
 
-        // app.delete();
+
+    public static void benchmark_send_each_async(List<Message> messages, int numRequests, FirebaseApp app) throws FileNotFoundException, IOException, FirebaseMessagingException {
+        long startTime = System.currentTimeMillis();
+        List<ApiFuture<BatchResponse>> responseFutures = new ArrayList<>();
+
+        // Make request futures
+        for (int i = 0; i < numRequests; i++) {
+            responseFutures.add(FirebaseMessaging.getInstance(app).sendEachAsync(messages, true));
+        }
+
+        // Resolve All
+        try {
+            List<BatchResponse> responses = ApiFutures.allAsList(responseFutures).get();
+            for (BatchResponse batchResponse : responses) {
+                System.out.println("Dry Run Response: " + batchResponse.getSuccessCount());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            throw new IOException("Error making request", e);
+        }
+
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        double averageTime = (double) totalTime / numRequests;
+    
+        System.out.println("Total time: " + totalTime + " ms");
+        System.out.println("Average time per request: " + averageTime + " ms");
     }
 
     @SuppressWarnings("deprecation")
@@ -101,7 +132,7 @@ public class MyApp {
 
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < numRequests; i++) {
-            BatchResponse response = FirebaseMessaging.getInstance().sendAll(messages, true);
+            BatchResponse response = FirebaseMessaging.getInstance(app).sendAll(messages, true);
             System.out.println("Dry Run Response: " + response.getSuccessCount());
         }
 
@@ -115,14 +146,26 @@ public class MyApp {
         // app.delete();
     }
 
-    public static void main(String[] args) throws FirebaseMessagingException, IOException{
+    public static void main(String[] args) throws FirebaseMessagingException, IOException, InterruptedException {
 
-        List<Message> messages = get_messages(500);
-        int numRequests = 1; // Number of time to loop
+
+        List<Message> messages = get_messages(99);
+        int numRequests = 50; // Number of time to loop
         FirebaseApp app;
 
+        System.out.println("Start");
         app = setup_admin_netty_http2();
-        benchmark_send_each(messages, numRequests, app);
+        // app = setup_admin_apache_http1();
+        // app = setup_admin_apache_http2();
+        // benchmark_send_each(messages, numRequests, app);
+        benchmark_send_each_async(messages, numRequests, app);
+        // benchmark_send_each_async(messages, numRequests, app);
+        // benchmark_send_each(messages, numRequests, app);
+
+        // System.out.println("Sleep");
+        // TimeUnit.SECONDS.sleep(5);
+        // System.out.println("Awake");
+
         app.delete();
 
         // System.out.println("\n\nHTTP1");
